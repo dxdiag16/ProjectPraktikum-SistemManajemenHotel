@@ -24,6 +24,10 @@ int validasiInput(string prompt) {
 
         if(valid && !input.empty()) {
             value = stoi(input);
+            if(value < 0) {
+                cout << "Input tidak boleh negatif!" << endl;
+                continue;
+            }
             return value;
         } else {
             cout << "Input harus berupa angka!" << endl;
@@ -75,11 +79,25 @@ Tanggal StringKeTanggal(string tanggal) {
 }
 
 Tanggal HitungCheckOut(Tanggal masuk, int lamaMenginap) {
+    // tambahkan angka 0 di awal, supaya indeks 1 = Januari, indeks 12 = Desember
+    int hariDalamBulan[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
     masuk.hari += lamaMenginap;
 
-    while(masuk.hari > 30) {
-        masuk.hari -= 30;
+    while(true) {
+
+        int batasHari = hariDalamBulan[masuk.bulan];
+        if((masuk.bulan == 2)) {
+            if((masuk.tahun % 4 == 0 && masuk.tahun % 100 != 0) || (masuk.tahun % 400 == 0)) {
+                batasHari = 29;
+            }
+        }
+
+        if(masuk.hari <= batasHari) {
+            break;
+        }
+        
+        masuk.hari -= batasHari;
         masuk.bulan++;
 
         if(masuk.bulan > 12) {
@@ -89,6 +107,43 @@ Tanggal HitungCheckOut(Tanggal masuk, int lamaMenginap) {
     }
 
     return masuk;
+}
+
+// cek apakah suatu tahun merupakan tahun kabisat atau bukan
+bool TahunKabisat(int tahun) {
+    // rumus tahun kabisat itu habis dibagi 4 DAN tidak habis dibagi 100, 
+    // atau harus habis dibagi 400 (khusus tahun abad kelipatan 100)
+    return (tahun % 4 == 0 && tahun % 100 != 0) || (tahun % 400 == 0);
+}
+
+// mengonversi tanggal ke dalam bentuk satu angka bulat besar (Absolute Date) untuk memudahkan perhitungan selisih hari
+int TotalHari(Tanggal t) {
+    int total = 0;
+    // angka 0 di awal adalah "dummy" supaya: Bulan 1 = Januari, Bulan 2 = Februari, dst
+    int hariDalamBulan[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    // itung semua hari dari tahun-tahun sebelumnya (dari tahun ke-1)
+    for(int y = 1; y < t.tahun; y++) {
+        if (TahunKabisat(y) == true) {
+            total += 366; // kalau tahun tersebut kabisat, tambah 366 hari ke dalam "tabungan" total
+        } else {
+            total += 365; // kalau tahun biasa (normal), cuma ditambah 365 hari
+        }
+    }
+    // kalo tahun dari tanggal yang dicek adalah kabisat, Februari diubah jadi 29 hari.
+    if (TahunKabisat(t.tahun)) {
+        hariDalamBulan[2] = 29;
+    }
+    // itung semua hari dari bulan-bulan sebelumnya di tahun berjalan
+    for(int b = 1; b < t.bulan; b++) {
+        total += hariDalamBulan[b];
+    }
+    // tambahkan sisa hari pada bulan yang sekarang
+    total += t.hari;
+    return total;
+}
+
+int HitungLamaMenginap(Tanggal masuk, Tanggal keluar) {
+    return TotalHari(keluar) - TotalHari(masuk);
 }
 
 string TanggalKeString(Tanggal t) {
@@ -430,17 +485,69 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
             cout << "  Tanggal Check In  : " << DaftarTamu[i].tanggalCheckIn << endl;
             cout << "  Check Out Pesan   : " << DaftarTamu[i].tanggalCheckOutRencana << endl;
             cin.ignore();
-            cout << "\nMasukkan Tanggal Check Out Aktual :";
+
+            cout << "\nMasukkan Tanggal Check Out Aktual (DD-MM-YYYY): ";
             cin.getline(DaftarTamu[i].tanggalCheckOutAktual, 15);
 
+            Tanggal tMasuk   = StringKeTanggal(DaftarTamu[i].tanggalCheckIn);
+            Tanggal tRencana = StringKeTanggal(DaftarTamu[i].tanggalCheckOutRencana);
+            Tanggal tAktual  = StringKeTanggal(DaftarTamu[i].tanggalCheckOutAktual);
+            
+            int lamaMenginapRencana = DaftarTamu[i].lamaMenginap; // Rencana awal
+            int lamaMenginapAsli    = HitungLamaMenginap(tMasuk, tAktual);  // Fakta dilapangan
+            int hariTelat           = HitungLamaMenginap(tRencana, tAktual); // Selisih keterlambatan
+
+            if (lamaMenginapAsli <= 0) lamaMenginapAsli = 1;
+            if (lamaMenginapRencana <= 0) lamaMenginapRencana = 1;
+
+            int hargaKamar = DaftarTamu[i].tipeKamar.hargaPerMalam;
+            int biayaNormal = lamaMenginapRencana * hargaKamar;
+            int denda = 0;
+
+            if (hariTelat > 0) {
+                denda = hariTelat * (hargaKamar * 1.5); 
+            } else {
+                hariTelat = 0; 
+            }
+
+            int totalBayar = biayaNormal + denda;
+
+            cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+            cout << "                 NOTA PEMBAYARAN HOTEL                 \n";
+            cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+            cout << "  Harga Kamar / Malam  : Rp " << hargaKamar << endl;
+            cout << "  Rencana Menginap     : " << lamaMenginapRencana << " malam\n";
+            cout << "  Total Menginap Asli  : " << lamaMenginapAsli << " malam\n";
+            cout << "  Keterlambatan        : " << hariTelat << " hari\n";
+            cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+            cout << "  Biaya Menginap Normal: Rp " << biayaNormal << endl;
+            cout << "  Biaya Denda Telat    : Rp " << denda << endl;
+            cout << "  ---------------------------------------------------\n";
+            cout << "  TOTAL YANG HARUS BAYAR: Rp " << totalBayar << endl;
+            cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+
+            // 8. KONFIRMASI PEMBAYARAN
             char konfirmasi;
-            cout << "Konfirmasi Check Out? (y/n): "; cin >> konfirmasi;
+            cout << "Konfirmasi Check Out & Pembayaran? (y/n): "; 
+            cin >> konfirmasi;
+            cin.ignore();
+
+            if(konfirmasi == 'y' || konfirmasi == 'Y') {
+                strcpy(DaftarTamu[i].status, "CHECK OUT");
+                int indexKamar = CariKamar(DaftarKamar, DaftarTamu[i].noKamar);
+                strcpy(DaftarKamar[indexKamar].status, "TERSEDIA");
+                strcpy(DaftarKamar[indexKamar].namaTamu, "-");
+
+                cout << "Check Out berhasil! Terima kasih telah menginap di Hotel Permai Nusantara." << endl;
+            } else {
+                cout << "Check Out dibatalkan. Tamu masih terdaftar sebagai CHECK IN." << endl;
+            }
             break;
         }
     }
 
     if(!ditemukan) {
-        cout << "DATA TAMU DITEMUKAN: " << endl;
+        cout << "\n[ERROR] Tidak ditemukan tamu aktif (CHECK IN) di kamar nomor " << noKamarCheckOut << "!\n";
     }
     system("pause");
     system("cls");
