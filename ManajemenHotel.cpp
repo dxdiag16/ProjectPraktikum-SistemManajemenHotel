@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iomanip>
 #include <cstring>
+#include <string.h>
+#include <sstream>
 using namespace std;
 
 int validasiInput(string prompt) {
@@ -161,6 +163,100 @@ string TanggalKeString(Tanggal t) {
     return hasil;
 }
 
+void simpanKeFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int isiDataTamu) {
+    ofstream file("hotel.txt");
+    if (!file.is_open()) {
+        cout << "[ERROR] Gagal membuka file untuk menyimpan data!\n";
+        return;
+    }
+
+    // 1. Tulis data KAMAR (20 baris fixed)
+    for (int i = 0; i < 20; i++) {
+        file << "KAMAR " << DaftarKamar[i].noKamar << "|"
+             << DaftarKamar[i].tipeKamar.namaTipe << "|"
+             << DaftarKamar[i].tipeKamar.hargaPerMalam << "|"
+             << DaftarKamar[i].tipeKamar.kapasitas << "|"
+             << DaftarKamar[i].tipeKamar.fasilitas << "|"
+             << DaftarKamar[i].status << "|"
+             << DaftarKamar[i].namaTamu << "\n";
+    }
+
+    // 2. Tulis data TAMU (dinamis)
+    for (int i = 0; i < isiDataTamu; i++) {
+        file << "TAMU " << DaftarTamu[i].namaTamu << "|"
+             << DaftarTamu[i].noKTP << "|"
+             << DaftarTamu[i].noKamar << "|"
+             << DaftarTamu[i].tipeKamar.namaTipe << "|"
+             << DaftarTamu[i].tipeKamar.hargaPerMalam << "|"
+             << DaftarTamu[i].tanggalCheckIn << "|"
+             << DaftarTamu[i].tanggalCheckOutRencana << "|"
+             << DaftarTamu[i].tanggalCheckOutAktual << "|"
+             << DaftarTamu[i].lamaMenginap << "|"
+             << DaftarTamu[i].noTelepon << "|"
+             << DaftarTamu[i].status << "\n";
+    }
+
+    file.close();
+}
+
+// Fungsi untuk membaca data dari hotel.txt saat program dijalankan
+bool loadDariFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int &isiDataTamu) {
+    ifstream file("hotel.txt");
+    if (!file.is_open()) {
+        return false; // File belum ada (jalankan inisialisasi default)
+    }
+
+    string baris;
+    int indexKamar = 0;
+    isiDataTamu = 0;
+
+    while (getline(file, baris)) {
+        if (baris.empty()) continue;
+
+        stringstream ss(baris);
+        string prefix;
+        ss >> prefix; // Membaca KAMAR atau TAMU
+
+        // Hilangkan spasi setelah prefix untuk membaca data sisa
+        string sisa;
+        getline(ss, sisa);
+        if (!sisa.empty() && sisa[0] == ' ') sisa.erase(0, 1);
+
+        stringstream lineData(sisa);
+        string field;
+
+        if (prefix == "KAMAR" && indexKamar < 20) {
+            // Parse data kamar
+            getline(lineData, field, '|'); DaftarKamar[indexKamar].noKamar = stoi(field);
+            getline(lineData, field, '|'); strcpy(DaftarKamar[indexKamar].tipeKamar.namaTipe, field.c_str());
+            getline(lineData, field, '|'); DaftarKamar[indexKamar].tipeKamar.hargaPerMalam = stoi(field);
+            getline(lineData, field, '|'); DaftarKamar[indexKamar].tipeKamar.kapasitas = stoi(field);
+            getline(lineData, field, '|'); strcpy(DaftarKamar[indexKamar].tipeKamar.fasilitas, field.c_str());
+            getline(lineData, field, '|'); strcpy(DaftarKamar[indexKamar].status, field.c_str());
+            getline(lineData, field, '|'); strcpy(DaftarKamar[indexKamar].namaTamu, field.c_str());
+            indexKamar++;
+        } 
+        else if (prefix == "TAMU") {
+            // Parse data tamu
+            getline(lineData, field, '|'); strcpy(DaftarTamu[isiDataTamu].namaTamu, field.c_str());
+            getline(lineData, field, '|'); strcpy(DaftarTamu[isiDataTamu].noKTP, field.c_str());
+            getline(lineData, field, '|'); DaftarTamu[isiDataTamu].noKamar = stoi(field);
+            getline(lineData, field, '|'); strcpy(DaftarTamu[isiDataTamu].tipeKamar.namaTipe, field.c_str());
+            getline(lineData, field, '|'); DaftarTamu[isiDataTamu].tipeKamar.hargaPerMalam = stoi(field);
+            getline(lineData, field, '|'); strcpy(DaftarTamu[isiDataTamu].tanggalCheckIn, field.c_str());
+            getline(lineData, field, '|'); strcpy(DaftarTamu[isiDataTamu].tanggalCheckOutRencana, field.c_str());
+            getline(lineData, field, '|'); strcpy(DaftarTamu[isiDataTamu].tanggalCheckOutAktual, field.c_str());
+            getline(lineData, field, '|'); DaftarTamu[isiDataTamu].lamaMenginap = stoi(field);
+            getline(lineData, field, '|'); strcpy(DaftarTamu[isiDataTamu].noTelepon, field.c_str());
+            getline(lineData, field, '|'); strcpy(DaftarTamu[isiDataTamu].status, field.c_str());
+            isiDataTamu++;
+        }
+    }
+
+    file.close();
+    return true;
+}
+
 void initKamar(Kamar DaftarKamar[], TipeKamar Tipe[]) {
     int index = 0;
 
@@ -295,8 +391,7 @@ void tampilkanKamarTersedia(Kamar DaftarKamar[], TipeKamar Tipe[]) {
     for(int i = 0; i < 20; i++) {
 
         if(strcmp(DaftarKamar[i].status, "TERSEDIA") == 0) {
-            int lantai =
-            DaftarKamar[i].noKamar / 100;
+            int lantai = DaftarKamar[i].noKamar / 100;
 
             cout << right << setw(3) << "" <<  left << setw(2)  << nomor++ << " | "
                  << left << setw(5) << DaftarKamar[i].noKamar << " | "
@@ -412,6 +507,8 @@ void AddGuest(Kamar DaftarKamar[], TipeKamar Tipe[], Tamu DaftarTamu[], int size
 
         isiDataTamu++;
     }
+
+    simpanKeFile(DaftarKamar, DaftarTamu, isiDataTamu);
 
     cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
     cout << jumlahTamu << " data tamu berhasil ditambahkan!" << endl;
@@ -538,6 +635,8 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
                 strcpy(DaftarKamar[indexKamar].status, "TERSEDIA");
                 strcpy(DaftarKamar[indexKamar].namaTamu, "-");
 
+                simpanKeFile(DaftarKamar, DaftarTamu, isiDataTamu);
+
                 cout << "Check Out berhasil! Terima kasih telah menginap di Hotel Permai Nusantara." << endl;
             } else {
                 cout << "Check Out dibatalkan. Tamu masih terdaftar sebagai CHECK IN." << endl;
@@ -549,6 +648,164 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
     if(!ditemukan) {
         cout << "\n[ERROR] Tidak ditemukan tamu aktif (CHECK IN) di kamar nomor " << noKamarCheckOut << "!\n";
     }
+    system("pause");
+    system("cls");
+}
+
+void Sorting(Tamu DaftarTamu[], int &isiDataTamu) {
+    for(int i = 1; i < isiDataTamu; i++) {
+        Tamu key = DaftarTamu[i];
+
+        int j = i - 1;
+
+        while(j >= 0 && strcmp(DaftarTamu[j].namaTamu, key.namaTamu) > 0) {
+            DaftarTamu[j + 1] = DaftarTamu[j];
+            j--;
+        }
+
+        DaftarTamu[j + 1] = key;
+    }
+}
+
+
+void SortGuest(Tamu DaftarTamu[], int &isiDataTamu, Kamar DaftarKamar[]){
+    system("cls");
+    cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+    cout << setw(18) << "" << "URUTKAN DATA TAMU"  << endl;
+    cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+    
+    if(isiDataTamu == 0) {
+        cout << "Belum ada data tamu!" << endl;
+        system("pause");
+        system("cls");
+        return;
+    }
+
+    cout << "[Proses sorting berdasarkan Nama Tamu (A-Z)...]";
+    cin.get();
+    cout << "\n";
+
+    Sorting(DaftarTamu, isiDataTamu);
+
+    simpanKeFile(DaftarKamar, DaftarTamu, isiDataTamu);
+
+    for(int i = 0; i < isiDataTamu; i++) {
+        cout << "Data Tamu Ke-" << i + 1 << endl;
+        cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+        cout << "  Nama Tamu  : " << DaftarTamu[i].namaTamu << right << setw(8) << "" << " | No. Kamar  : " << DaftarTamu[i].noKamar << endl;
+        cout << "  Check In   : " << DaftarTamu[i].tanggalCheckIn << right << setw(1) << "" << " | Lama       : " << DaftarTamu[i].lamaMenginap << " hari" << endl;
+        cout << "  Status     : " << DaftarTamu[i].status << endl;
+        cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+    }
+
+    system("pause");
+    system("cls");
+}
+
+int BinarySearchNama(Tamu DaftarTamu[], int &isiDataTamu, string cariNama) {
+    int left = 0;
+    int right = isiDataTamu - 1;
+
+    while(left <= right) {
+        int mid = (left + right) / 2;
+
+        int hasil = strcasecmp((DaftarTamu[mid].namaTamu),(cariNama.c_str()));
+
+        if(hasil == 0)
+            return mid;
+
+        else if(hasil < 0)
+            left = mid + 1;
+
+        else
+            right = mid - 1;
+    }
+    return -1;
+}
+
+void SearchGuest(Tamu DaftarTamu[], int &isiDataTamu) {
+    system("cls");
+    string cariNama;
+    cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+    cout << setw(20) << "" << "CARI DATA TAMU"  << endl;
+    cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+    
+    if(isiDataTamu == 0) {
+        cout << "Belum ada data tamu!" << endl;
+        system("pause");
+        system("cls");
+        return;
+    }
+    cout << "Masukkan Nama Tamu : ";
+    getline(cin, cariNama);
+
+    cout << "\n";
+    cout << "[Memuat Data ke memori...]";
+    cin.get();
+    cout << "[Mengurutkan data (A-Z) untuk binary search...]"; 
+    cin.get();
+    cout << "[Binary search sedang berjalan...]"; 
+    cin.get();
+    cout << "\n";
+
+    cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+    cout << "HASIL PENCARIAN: " << endl;
+    cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+    Sorting(DaftarTamu, isiDataTamu);
+    int indeks = BinarySearchNama(DaftarTamu, isiDataTamu, cariNama);
+
+    if(indeks != -1) {
+        for(int i = 0; i < isiDataTamu; i++) {
+            cout << "Data Tamu Ke-" << i + 1 << endl;
+            cout << "  Nama Tamu         : " << DaftarTamu[i].namaTamu << endl;
+            cout << "  No. KTP           : " << DaftarTamu[i].noKTP << endl;
+            cout << "  No. Kamar         : " << DaftarTamu[i].noKamar << endl;
+            cout << "  Harga/Malam       : " << DaftarTamu[i].tipeKamar.hargaPerMalam << endl;
+            cout << "  Tanggal Check In  : " << DaftarTamu[i].tanggalCheckIn << endl;
+            cout << "  Tanggal Check Out : " << DaftarTamu[i].tanggalCheckOutRencana << endl;
+            cout << "  Lama Menginap     : " << DaftarTamu[i].lamaMenginap << endl;
+            cout << "  No. Telepon       : " << DaftarTamu[i].noTelepon << endl;
+            cout << "  Status            : " << DaftarTamu[i].status << endl;
+            cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+        } 
+    } else {
+        cout << "Maaf, nama tamu " << cariNama << " tidak ditemukan." << endl;
+        cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+    }  
+    system("pause");
+    system("cls");
+}
+
+void RoomStatus(Tamu DaftarTamu[], Kamar DaftarKamar[]) {
+    system("cls");
+    cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+    cout << setw(17) << "" << "STATUS KAMAR HOTEL"  << endl;
+    cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+    cout << setw(2) << "" << "Total Kamar   : " << 20 << endl;
+    cout << setw(2) << "" << "Kamar Tersedia: " << HitungKamarTersedia(DaftarKamar) << endl;
+    cout << setw(2) << "" << "Kamar Terisi  : " << HitungKamarTerisi(DaftarKamar) << endl;
+    cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+
+    cout << "  No  | Kamar | Lantai | Tipe      | Harga/Malam  | Kap | status   | Tamu\n";
+    cout << "------+-------+--------+-----------+--------------+-----+----------+--------------\n";
+
+    int nomor = 1;
+
+    for(int i = 0; i < 20; i++) {
+        int lantai = DaftarKamar[i].noKamar / 100;
+
+        cout << right << setw(3) << "" <<  left << setw(2)  << nomor++ << " | "
+            << left << setw(5) << DaftarKamar[i].noKamar << " | "
+            << right << setw(3) << "" << left << setw(3) << lantai << " | "
+            << left << setw(9) << DaftarKamar[i].tipeKamar.namaTipe << " | "
+            << right << setw(3) << "" <<  left << setw(9) << DaftarKamar[i].tipeKamar.hargaPerMalam << " | "
+            << right << setw(1) << "" << left << setw(2) << DaftarKamar[i].tipeKamar.kapasitas << " | "
+            << left << setw(8) << DaftarKamar[i].status << " | "
+            << DaftarKamar[i].namaTamu
+            << endl;
+    }
+    cout << "=================================================================================\n";
+
     system("pause");
     system("cls");
 }
@@ -596,6 +853,13 @@ int main() {
 
     initKamar(DaftarKamar, Tipe);
 
+    // MODIFIKASI FILE HANDLING DI SINI
+    if (!loadDariFile(DaftarKamar, DaftarTamu, isiDataTamu)) {
+        // Jika file tidak ada, inisialisasi default baru dijalankan
+        initKamar(DaftarKamar, Tipe);
+        simpanKeFile(DaftarKamar, DaftarTamu, isiDataTamu); // Buat file pertama kali
+    }
+
     TampilanAwal();
     
     int pilihan;
@@ -629,10 +893,13 @@ int main() {
                 CheckOut(DaftarTamu, DaftarKamar, isiDataTamu);
                 break;
             case 4:
+                SearchGuest(DaftarTamu, isiDataTamu);
                 break;
             case 5:
+                SortGuest(DaftarTamu, isiDataTamu, DaftarKamar);
                 break;
             case 6:
+                RoomStatus(DaftarTamu, DaftarKamar);
                 break;
             case 7:
                 MenuExit();
