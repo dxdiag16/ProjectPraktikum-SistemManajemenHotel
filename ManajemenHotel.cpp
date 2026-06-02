@@ -3,7 +3,12 @@
 #include <fstream>
 #include <iomanip>
 #include <cstring>
+#include <cctype>
 using namespace std;
+
+int const MAX_KAMAR = 20;
+int const MAX_TAMU = 100;
+char const FILENAME[] = "data_tamu.txt";
 
 int validasiInput(string prompt) {
     string input;
@@ -159,6 +164,19 @@ string TanggalKeString(Tanggal t) {
     );
 
     return hasil;
+}
+
+bool cekFormatTanggal(string tgl) {
+    // pastikan formatnya bener "DD-MM-YYYY"
+    if (tgl.length() != 10) return false;
+    // posisi tanda hubung '-' harus pas di indeks 2 dan 5
+    if (tgl[2] != '-' || tgl[5] != '-') return false;
+    // bagian lain harus angka
+    for (int i = 0; i < 10; i++) {
+        if (i == 2 || i == 5) continue;
+        if (!isdigit(tgl[i])) return false;
+    }
+    return true;
 }
 
 void initKamar(Kamar DaftarKamar[], TipeKamar Tipe[]) {
@@ -486,6 +504,7 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
             cout << "  Check Out Pesan   : " << DaftarTamu[i].tanggalCheckOutRencana << endl;
             cin.ignore();
 
+           
             cout << "\nMasukkan Tanggal Check Out Aktual (DD-MM-YYYY): ";
             cin.getline(DaftarTamu[i].tanggalCheckOutAktual, 15);
 
@@ -535,8 +554,10 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
             if(konfirmasi == 'y' || konfirmasi == 'Y') {
                 strcpy(DaftarTamu[i].status, "CHECK OUT");
                 int indexKamar = CariKamar(DaftarKamar, DaftarTamu[i].noKamar);
-                strcpy(DaftarKamar[indexKamar].status, "TERSEDIA");
-                strcpy(DaftarKamar[indexKamar].namaTamu, "-");
+                if(indexKamar != -1) {
+                    strcpy(DaftarKamar[indexKamar].status, "TERSEDIA");
+                    strcpy(DaftarKamar[indexKamar].namaTamu, "-");
+                }
 
                 cout << "Check Out berhasil! Terima kasih telah menginap di Hotel Permai Nusantara." << endl;
             } else {
@@ -551,6 +572,220 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
     }
     system("pause");
     system("cls");
+}
+
+string KeHurufKecil(string teks) {
+    for (char &c : teks) c = tolower(c);
+    return teks;
+}
+// sort sementara, buat binary search
+void sortSementara(Tamu temp[], int indeksAsli[], int isiDataTamu) {
+    for(int i = 0; i < isiDataTamu - 1; i++) {
+        for(int j = 0; j < isiDataTamu - i - 1; j++) {
+            if(KeHurufKecil(temp[j].namaTamu) > KeHurufKecil(temp[j+1].namaTamu)) {
+                Tamu t = temp[j];
+                temp[j] = temp[j+1];
+                temp[j+1] = t;
+
+                int idx = indeksAsli[j];
+                indeksAsli[j] = indeksAsli[j+1];
+                indeksAsli[j+1] = idx;
+            }
+        }
+    }
+}
+
+void SearchGuest(Tamu DaftarTamu[], int isiDataTamu) {
+    system("cls");
+    cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+    cout << setw(16) << "" << "CARI DATA TAMU"  << endl;
+    cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+
+    if(isiDataTamu == 0) {
+        cout << "Belum ada data tamu!" << endl;
+        system("pause");
+        system("cls");
+        return;
+    }
+
+    string namaCari;
+    cout << "Masukkan Nama Tamu: ";
+    getline(cin, namaCari);
+
+    Tamu temp[MAX_TAMU];
+    int indeksAsli[MAX_TAMU];
+
+    for(int i = 0; i < isiDataTamu; i++) {
+    temp[i] = DaftarTamu[i];
+    indeksAsli[i] = i; // simpan indeks asli sebelum diurutkan
+    }
+    
+    sortSementara(temp, indeksAsli, isiDataTamu);
+
+    
+    int kiri = 0, kanan = isiDataTamu - 1;
+    int posisi = -1;
+    // cari posisi tengah yang pas
+    while(kiri <= kanan) {
+        int tengah = (kiri + kanan) / 2;
+        string nama = temp[tengah].namaTamu;
+        string namaTengahKecil = KeHurufKecil(temp[tengah].namaTamu);
+        string namaCariKecil = KeHurufKecil(namaCari);
+
+        if(namaTengahKecil == namaCariKecil) {
+            posisi = tengah;
+            break;
+        } else if(namaTengahKecil < namaCariKecil) {
+            kiri = tengah + 1;
+        } else {
+            kanan = tengah - 1;
+        } 
+
+    }
+
+        if(posisi == -1) {
+            cout << "Tamu dengan nama '" << namaCari << "' tidak ditemukan!" << endl;
+            system("pause");
+            system("cls");
+            return;
+        }
+
+        int mulai = posisi, akhir = posisi;
+
+        // cari ke kiri
+        while(mulai > 0 && KeHurufKecil(temp[mulai-1].namaTamu) == KeHurufKecil(namaCari)) {
+            mulai--;
+        }
+        // cari ke kanan
+        while(akhir < isiDataTamu - 1 && KeHurufKecil(temp[akhir+1].namaTamu) == KeHurufKecil(namaCari)) {
+            akhir++;
+        }
+
+        int jumlahDitemukan = akhir - mulai + 1;
+        cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+        cout << "HASIL PENCARIAN\n";
+        cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+
+        for(int i = mulai; i <= akhir; i++) {
+            cout << "Data Tamu Ke-" << indeksAsli[i] + 1 << endl;
+            cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+            cout << "  Nama Tamu         : " << temp[i].namaTamu << endl;
+            cout << "  No. KTP           : " << temp[i].noKTP << endl;
+            cout << "  No. Kamar         : " << temp[i].noKamar << endl;
+            cout << "  Harga/Malam       : " << temp[i].tipeKamar.hargaPerMalam << endl;
+            cout << "  Tanggal Check In  : " << temp[i].tanggalCheckIn << endl;
+            cout << "  Tanggal Check Out : " << temp[i].tanggalCheckOutRencana << endl;
+            cout << "  Lama Menginap     : " << temp[i].lamaMenginap << endl;
+            cout << "  No. Telepon       : " << temp[i].noTelepon << endl;
+            cout << "  Status            : " << temp[i].status << endl;
+            cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+        }
+    cout << "Ditemukan " << jumlahDitemukan << " data dengan nama \""
+     << namaCari << "\".\n";
+     system("pause"); 
+     system("cls");
+}
+
+void SortGuest(Tamu DaftarTamu[], int isiDataTamu) {
+    system("cls");
+    cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+    cout << setw(16) << "" << "URUTKAN DATA TAMU"  << endl;
+    cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+
+    if(isiDataTamu == 0) {
+        cout << "Belum ada data tamu!" << endl;
+        system("pause");
+        system("cls");
+        return;
+    }
+
+    int pilihan;
+    cout << "Pilih kriteria pengurutan:\n";
+    cout << "1. Nama Tamu (A-Z)\n";
+    cout << "2. Nama Tamu (Z-A)\n";
+    cout << "Masukkan pilihan (1/2): ";
+    cin >> pilihan;
+
+    if(pilihan != 1 && pilihan != 2) {
+        cout << "Pilihan tidak valid!" << endl;
+        system("pause");
+        system("cls");
+        return;
+    }
+
+    cout << "Proses pengurutan data tamu berdasarkan nama tamu...\n\n";
+
+    for(int i = 0; i < isiDataTamu - 1; i++) {
+        for(int j = 0; j < isiDataTamu - i - 1; j++) {
+            string namaJ = KeHurufKecil(DaftarTamu[j].namaTamu);
+            string namaJ1 = KeHurufKecil(DaftarTamu[j+1].namaTamu);
+            bool banding;
+            if(pilihan == 1) {
+                banding = namaJ > namaJ1; // Ascending (A-Z)
+            } else {
+                banding = namaJ < namaJ1; // Descending (Z-A)
+            }
+
+            if(banding) {
+                Tamu t = DaftarTamu[j];
+                DaftarTamu[j] = DaftarTamu[j+1];
+                DaftarTamu[j+1] = t;
+            }
+        }
+    }
+
+    if(pilihan == 1) {
+        cout << "HASIL PENGURUTAN BERDASARKAN NAMA TAMU(A - Z):\n";
+    } else {
+        cout << "HASIL PENGURUTAN BERDASARKAN NAMA TAMU(Z - A):\n";
+    }
+    cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+    for(int i = 0; i < isiDataTamu; i++) {
+        cout << "Data Tamu Ke-" << i + 1 << endl;
+        cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
+        cout << "  Nama Tamu         : " << DaftarTamu[i].namaTamu << endl;
+        cout << "  No. KTP           : " << DaftarTamu[i].noKTP << endl;
+        cout << "  No. Kamar         : " << DaftarTamu[i].noKamar << endl;
+        cout << "  Harga/Malam       : " << DaftarTamu[i].tipeKamar.hargaPerMalam << endl;
+        cout << "  Tanggal Check In  : " << DaftarTamu[i].tanggalCheckIn << endl;
+        cout << "  Tanggal Check Out : " << DaftarTamu[i].tanggalCheckOutRencana << endl;
+        cout << "  Lama Menginap     : " << DaftarTamu[i].lamaMenginap << endl;
+        cout << "  No. Telepon       : " << DaftarTamu[i].noTelepon << endl;
+        cout << "  Status            : " << DaftarTamu[i].status << endl;
+        cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
+    }
+        system("pause");
+        system("cls");
+}
+
+void RoomStatus(Kamar DaftarKamar[]) {
+    system("cls");
+    cout << setfill('=') << setw(75) << "" << setfill(' ') << "\n";
+    cout << setw(26) << "" << "STATUS KAMAR HOTEL\n";
+    cout << setfill('=') << setw(75) << "" << setfill(' ') << "\n";
+    cout << "  Total Kamar    : " << MAX_KAMAR << "\n";
+    cout << "  Kamar Tersedia : " << HitungKamarTersedia(DaftarKamar) << "\n";
+    cout << "  Kamar Terisi   : " << HitungKamarTerisi(DaftarKamar) << "\n";
+    cout << setfill('=') << setw(75) << "" << setfill(' ') << "\n";
+ 
+    // PERBAIKAN: Lebar kolom di header disamakan dengan isi (Total lebar dinaikkan jadi 75 agar lega)
+    cout << " No | Kamar | Lantai | Tipe Tipe   | Harga / Malam   | Kap | Status   | Tamu\n";
+    cout << "----+-------+--------+-------------+-----------------+-----+----------+------------------\n";
+ 
+    for (int i = 0; i < MAX_KAMAR; i++) {
+        int lantai = DaftarKamar[i].noKamar / 100;
+        
+        cout << right << setw(3)  << i + 1
+             << " | " << left  << setw(5)  << DaftarKamar[i].noKamar
+             << " | " << right << setw(6)  << lantai
+             << " | " << left  << setw(11) << DaftarKamar[i].tipeKamar.namaTipe // Dinaikkan jadi 11 biar muat tipe panjang
+             << " | " << left  << "Rp " << right << setw(10) << DaftarKamar[i].tipeKamar.hargaPerMalam // Format Rupiah rapi
+             << " | " << right << setw(3)  << DaftarKamar[i].tipeKamar.kapasitas // Sesuai kapasitas
+             << " | " << left  << setw(8)  << DaftarKamar[i].status
+             << " | " << DaftarKamar[i].namaTamu << "\n";
+    }
+    cout << "----+-------+--------+-------------+-----------------+-----+----------+------------------\n";
+    system("pause"); system("cls");
 }
 
 void TampilanAwal() {
@@ -628,11 +863,14 @@ int main() {
             case 3:
                 CheckOut(DaftarTamu, DaftarKamar, isiDataTamu);
                 break;
-            case 4:
+            case 4: 
+                SearchGuest(DaftarTamu, isiDataTamu);
                 break;
             case 5:
+                SortGuest(DaftarTamu, isiDataTamu);
                 break;
             case 6:
+                RoomStatus(DaftarKamar);
                 break;
             case 7:
                 MenuExit();
