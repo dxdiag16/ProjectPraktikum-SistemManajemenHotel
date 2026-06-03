@@ -166,22 +166,59 @@ string TanggalKeString(Tanggal t) {
 bool cekFormatTanggal(string tgl) {
     if (tgl.length() != 10) return false;
     if (tgl[2] != '-' || tgl[5] != '-') return false;
+
     for (int i = 0; i < 10; i++) {
         if (i == 2 || i == 5) continue;
         if (!isdigit(tgl[i])) return false;
     }
 
-    // tambah validasi nilai
     int hari  = stoi(tgl.substr(0, 2));
     int bulan = stoi(tgl.substr(3, 2));
     int tahun = stoi(tgl.substr(6, 4));
 
     if (bulan < 1 || bulan > 12) return false;
-    if (hari < 1 || hari > 31)   return false;
-    if (tahun < 2000)             return false;
+    if (tahun < 2000) return false;
+
+    int hariDalamBulan[] = {
+        0, 31, 28, 31, 30, 31, 30,
+        31, 31, 30, 31, 30, 31
+    };
+
+    if (TahunKabisat(tahun)) {
+        hariDalamBulan[2] = 29;
+    }
+
+    if (hari < 1 || hari > hariDalamBulan[bulan]) {
+        return false;
+    }
 
     return true;
 }
+bool cekAngkaSaja(string input) {
+    if(input.empty()) return false;
+    for(char c : input) {
+        if(!isdigit(c)) return false;
+    }
+    return true;
+} // untuk nomor telepon
+
+bool cekHurufSaja(string str) {
+    for (int i = 0; i < str.length(); i++) {
+        if (!isalpha(str[i]) && str[i] != ' ') {
+            return false; 
+        }
+    }
+    return true; // Jika semua karakter aman
+}// untuk memastikan input nama adalah huruf bukan angka (soalnya nama tipenya char)
+
+bool cekKTPDuplikat(Tamu DaftarTamu[], int isiDataTamu, string ktp) {
+    for(int i = 0; i < isiDataTamu; i++) {
+        if(strcmp(DaftarTamu[i].noKTP, ktp.c_str()) == 0) {
+            return true; // duplikat ditemukan
+        }
+    }
+    return false;
+} // untuk validasi nomor KTP agar tidak ada duplikat
 
 void simpanKeFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int isiDataTamu) {
     ofstream file("hotel.txt");
@@ -501,11 +538,42 @@ void AddGuest(Kamar DaftarKamar[], TipeKamar Tipe[], Tamu DaftarTamu[], int size
             break;
         }
 
-        cout << "Nama Tamu        : ";
-        cin.getline(DaftarTamu[isiDataTamu].namaTamu, 50);
-        cout << "No.KTP           : ";
-        cin.getline(DaftarTamu[isiDataTamu].noKTP, 20);
-        // Di AddGuest, ganti bagian input tanggal check in
+        string inputNama;
+        while (true) {
+            cout << "Nama Tamu        : ";
+            getline(cin, inputNama);
+            if (!cekHurufSaja(inputNama)) {
+                cout << "Nama harus berupa huruf!" << endl;
+                continue;
+            }
+            if (inputNama.empty() || inputNama == " ") {
+                cout << "Nama tidak boleh kosong!" << endl;
+                continue;
+            }
+            strcpy(DaftarTamu[isiDataTamu].namaTamu, inputNama.c_str());
+            break;
+        }
+
+        string inputKTP;
+        while (true) {
+            cout << "No. KTP          : ";
+            getline(cin, inputKTP);
+            if(!cekAngkaSaja(inputKTP)) {
+                cout << "No KTP harus berupa angka!" << endl;
+                continue;
+            }
+            if(inputKTP.length() != 16) {
+                cout << "No KTP harus terdiri dari 16 karakter!" << endl;
+                continue;
+            }
+            if(cekKTPDuplikat(DaftarTamu, isiDataTamu, inputKTP)) {
+                cout << "No KTP sudah terdaftar! Masukkan No KTP lain." << endl;
+                continue;
+            }
+            strcpy(DaftarTamu[isiDataTamu].noKTP, inputKTP.c_str());
+            break;
+        }
+        
         string tglInput;
         while(true) {
             cout << "Tanggal Check In : ";
@@ -516,14 +584,37 @@ void AddGuest(Kamar DaftarKamar[], TipeKamar Tipe[], Tamu DaftarTamu[], int size
             }
             cout << "Format tanggal salah! Gunakan DD-MM-YYYY" << endl;
         }
-        DaftarTamu[isiDataTamu].lamaMenginap = validasiInput("Lama Menginap    : ");
+        while(true) {
+            DaftarTamu[isiDataTamu].lamaMenginap =
+                validasiInput("Lama Menginap    : ");
+
+            if(DaftarTamu[isiDataTamu].lamaMenginap < 1) {
+                cout << "Minimal menginap 1 malam!" << endl;
+                continue;
+            }
+            break;
+        }
         Tanggal checkIn = StringKeTanggal(DaftarTamu[isiDataTamu].tanggalCheckIn);
         Tanggal checkOut = HitungCheckOut(checkIn, DaftarTamu[isiDataTamu].lamaMenginap);
         string hasil = TanggalKeString(checkOut);
         strcpy(DaftarTamu[isiDataTamu].tanggalCheckOutRencana, hasil.c_str());
 
-        cout << "No Telepon       : ";
-        cin.getline(DaftarTamu[isiDataTamu].noTelepon, 15);
+        while(true) {
+             cout << "No. Telepon      : ";
+             string inputTelepon;
+             getline(cin, inputTelepon);
+             if(!cekAngkaSaja(inputTelepon)) {
+                cout << "No Telepon harus berupa angka!" << endl;
+                continue;
+            }
+            if(inputTelepon.length() < 10 || inputTelepon.length() > 13) {
+                cout << "No Telepon harus terdiri dari 10-13 karakter!" << endl;
+                continue;
+            }
+            strcpy(DaftarTamu[isiDataTamu].noTelepon, inputTelepon.c_str());
+            break;
+        }
+        
         cout << ">> Kamar " << DaftarKamar[index].noKamar << " dipilih. Tgl Check Out: " <<  DaftarTamu[isiDataTamu].tanggalCheckOutRencana << endl;
 
         DaftarTamu[isiDataTamu].tipeKamar = DaftarKamar[index].tipeKamar;
@@ -621,11 +712,19 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
             while(true) {
                 cout << "\nMasukkan Tanggal Check Out Aktual (DD-MM-YYYY): ";
                 getline(cin, tglAktual);
-                if(cekFormatTanggal(tglAktual)) {
-                    strcpy(DaftarTamu[i].tanggalCheckOutAktual, tglAktual.c_str());
-                    break;
+                if(!cekFormatTanggal(tglAktual)) {
+                    cout << "Format tanggal salah! Gunakan DD-MM-YYYY" << endl;
+                    continue;
                 }
-                cout << "Format tanggal salah! Gunakan DD-MM-YYYY" << endl;
+                Tanggal tMasuk  = StringKeTanggal(DaftarTamu[i].tanggalCheckIn);
+                Tanggal tAktual = StringKeTanggal(tglAktual);
+                if (TotalHari(tAktual) < TotalHari(tMasuk)) {
+                    cout << "[ERROR] Tanggal Check Out tidak boleh sebelum tanggal Check In (" 
+                        << DaftarTamu[i].tanggalCheckIn << ")!" << endl;
+                    continue; 
+                }
+                strcpy(DaftarTamu[i].tanggalCheckOutAktual, tglAktual.c_str());
+                break;
             }
             Tanggal tMasuk   = StringKeTanggal(DaftarTamu[i].tanggalCheckIn);
             Tanggal tRencana = StringKeTanggal(DaftarTamu[i].tanggalCheckOutRencana);
@@ -664,7 +763,6 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
             cout << "  TOTAL YANG HARUS BAYAR: Rp " << totalBayar << endl;
             cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
 
-            // 8. KONFIRMASI PEMBAYARAN
             char konfirmasi;
             cout << "Konfirmasi Check Out & Pembayaran? (y/n): "; 
             cin >> konfirmasi;
@@ -693,13 +791,21 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
     system("cls");
 }
 
+string KeHurufKecil(string teks) {
+    string hasil = teks;
+    for (char &c : hasil) {
+        c = tolower(c);
+    }
+    return hasil;
+}
+
 void Sorting(Tamu DaftarTamu[], int &isiDataTamu) {
     for(int i = 1; i < isiDataTamu; i++) {
         Tamu key = DaftarTamu[i];
 
         int j = i - 1;
 
-        while(j >= 0 && strcmp(DaftarTamu[j].namaTamu, key.namaTamu) > 0) {
+        while(j >= 0 && (KeHurufKecil(DaftarTamu[j].namaTamu).compare(KeHurufKecil(key.namaTamu)) > 0)) {
             DaftarTamu[j + 1] = DaftarTamu[j];
             j--;
         }
@@ -707,7 +813,6 @@ void Sorting(Tamu DaftarTamu[], int &isiDataTamu) {
         DaftarTamu[j + 1] = key;
     }
 }
-
 
 void SortGuest(Tamu DaftarTamu[], int &isiDataTamu, Kamar DaftarKamar[]){
     system("cls");
@@ -733,8 +838,10 @@ void SortGuest(Tamu DaftarTamu[], int &isiDataTamu, Kamar DaftarKamar[]){
     for(int i = 0; i < isiDataTamu; i++) {
         cout << "Data Tamu Ke-" << i + 1 << endl;
         cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
-        cout << "  Nama Tamu  : " << DaftarTamu[i].namaTamu << right << setw(5) << "" << " | No. Kamar  : " << DaftarTamu[i].noKamar << endl;
-        cout << "  Check In   : " << DaftarTamu[i].tanggalCheckIn << right << setw(1) << "" << " | Lama       : " << DaftarTamu[i].lamaMenginap << " hari" << endl;
+        cout << "  Nama Tamu  : " << left << setw(20) << DaftarTamu[i].namaTamu 
+             << " | No. Kamar  : " << DaftarTamu[i].noKamar << endl;
+        cout << "  Check In   : " << left << setw(20) << DaftarTamu[i].tanggalCheckIn 
+             << " | Lama       : " << DaftarTamu[i].lamaMenginap << " hari" << endl;
         cout << "  Status     : " << DaftarTamu[i].status << endl;
         cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
     }
@@ -750,7 +857,7 @@ int BinarySearchNama(Tamu DaftarTamu[], int &isiDataTamu, string cariNama) {
     while(left <= right) {
         int mid = (left + right) / 2;
 
-        int hasil = strcasecmp((DaftarTamu[mid].namaTamu),(cariNama.c_str()));
+        int hasil = KeHurufKecil(DaftarTamu[mid].namaTamu).compare(KeHurufKecil(cariNama));
 
         if(hasil == 0)
             return mid;
