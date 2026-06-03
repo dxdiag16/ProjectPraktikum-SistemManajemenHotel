@@ -15,20 +15,33 @@ int validasiInput(string prompt) {
         cout << prompt;
         getline(cin, input);
 
-        bool valid = true;
+        if(input.empty()) {
+            cout << "Input tidak boleh kosong!" << endl;
+            continue;
+        }
 
-        for(char c : input) {
-            if(!isdigit(c)) {
+        bool valid = true;
+        // Pengecekan dimulai dari indeks 0
+        int startIndex = 0; 
+
+        // Jika karakter pertama adalah tanda minus dan panjang input lebih dari 1 karakter
+        if(input[0] == '-' && input.length() > 1) {
+            startIndex = 1; // Mulai cek angka dari karakter kedua
+        }
+
+        // Cek apakah sisa karakternya benar-benar angka
+        for(int i = startIndex; i < input.length(); i++) {
+            if(!isdigit(input[i])) {
                 valid = false;
                 break;
             }
         }
 
-        if(valid && !input.empty()) {
+        if(valid) {
             value = stoi(input);
             if(value < 0) {
                 cout << "Input tidak boleh negatif!" << endl;
-                continue;
+                continue; // Mengulang loop untuk meminta input lagi
             }
             return value;
         } else {
@@ -481,21 +494,6 @@ void AddGuest(Kamar DaftarKamar[], TipeKamar Tipe[], Tamu DaftarTamu[], int size
     cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
     jumlahTamu = validasiInput("Jumlah tamu check in (0 untuk kembali): ");
 
-    if(HitungKamarTersedia(DaftarKamar) == 0) {
-        cout << "Maaf, seluruh kamar sedang penuh!" << endl;
-
-        system("pause");
-        system("cls");
-        return;
-    }
-
-    if(jumlahTamu > HitungKamarTersedia(DaftarKamar)) {
-        cout << "Kamar tersedia hanya " << HitungKamarTersedia(DaftarKamar) << " kamar!" << endl;
-        system("pause");
-        system("cls");
-        return;
-    }
-
     if(jumlahTamu == 0) {
         system("cls");
         return;
@@ -508,6 +506,23 @@ void AddGuest(Kamar DaftarKamar[], TipeKamar Tipe[], Tamu DaftarTamu[], int size
 
     if(isiDataTamu + jumlahTamu > size) {
         cout << "Data tamu penuh!" << endl;
+        system("pause");
+        system("cls");
+        return;
+    }
+
+    if(HitungKamarTersedia(DaftarKamar) == 0) {
+        cout << "Maaf, seluruh kamar sedang penuh!" << endl;
+
+        system("pause");
+        system("cls");
+        return;
+    }
+
+    if(jumlahTamu > HitungKamarTersedia(DaftarKamar)) {
+        cout << "Kamar tersedia hanya " << HitungKamarTersedia(DaftarKamar) << " kamar!" << endl;
+        system("pause");
+        system("cls");
         return;
     }
 
@@ -608,7 +623,7 @@ void AddGuest(Kamar DaftarKamar[], TipeKamar Tipe[], Tamu DaftarTamu[], int size
                 continue;
             }
             if(inputTelepon.length() < 10 || inputTelepon.length() > 13) {
-                cout << "No Telepon harus terdiri dari 10-13 karakter!" << endl;
+                cout << 1 << endl;
                 continue;
             }
             strcpy(DaftarTamu[isiDataTamu].noTelepon, inputTelepon.c_str());

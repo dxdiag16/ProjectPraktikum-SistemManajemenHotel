@@ -1,0 +1,1 @@
+"No KTP sudah terdaftar! Masukkan No KTP lain."
