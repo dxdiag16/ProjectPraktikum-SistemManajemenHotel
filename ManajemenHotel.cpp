@@ -163,6 +163,26 @@ string TanggalKeString(Tanggal t) {
     return hasil;
 }
 
+bool cekFormatTanggal(string tgl) {
+    if (tgl.length() != 10) return false;
+    if (tgl[2] != '-' || tgl[5] != '-') return false;
+    for (int i = 0; i < 10; i++) {
+        if (i == 2 || i == 5) continue;
+        if (!isdigit(tgl[i])) return false;
+    }
+
+    // tambah validasi nilai
+    int hari  = stoi(tgl.substr(0, 2));
+    int bulan = stoi(tgl.substr(3, 2));
+    int tahun = stoi(tgl.substr(6, 4));
+
+    if (bulan < 1 || bulan > 12) return false;
+    if (hari < 1 || hari > 31)   return false;
+    if (tahun < 2000)             return false;
+
+    return true;
+}
+
 void simpanKeFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int isiDataTamu) {
     ofstream file("hotel.txt");
     if (!file.is_open()) {
@@ -485,10 +505,18 @@ void AddGuest(Kamar DaftarKamar[], TipeKamar Tipe[], Tamu DaftarTamu[], int size
         cin.getline(DaftarTamu[isiDataTamu].namaTamu, 50);
         cout << "No.KTP           : ";
         cin.getline(DaftarTamu[isiDataTamu].noKTP, 20);
-        cout << "Tanggal Check In : ";
-        cin.getline(DaftarTamu[isiDataTamu].tanggalCheckIn, 15);
+        // Di AddGuest, ganti bagian input tanggal check in
+        string tglInput;
+        while(true) {
+            cout << "Tanggal Check In : ";
+            getline(cin, tglInput);
+            if(cekFormatTanggal(tglInput)) {
+                strcpy(DaftarTamu[isiDataTamu].tanggalCheckIn, tglInput.c_str());
+                break;
+            }
+            cout << "Format tanggal salah! Gunakan DD-MM-YYYY" << endl;
+        }
         DaftarTamu[isiDataTamu].lamaMenginap = validasiInput("Lama Menginap    : ");
-
         Tanggal checkIn = StringKeTanggal(DaftarTamu[isiDataTamu].tanggalCheckIn);
         Tanggal checkOut = HitungCheckOut(checkIn, DaftarTamu[isiDataTamu].lamaMenginap);
         string hasil = TanggalKeString(checkOut);
@@ -587,11 +615,18 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
             cout << "  No. Kamar         : " << DaftarTamu[i].noKamar << endl;
             cout << "  Tanggal Check In  : " << DaftarTamu[i].tanggalCheckIn << endl;
             cout << "  Check Out Pesan   : " << DaftarTamu[i].tanggalCheckOutRencana << endl;
-            cout << setfill('=') << setw(55) << "" << setfill(' '); cin.ignore();
+            cout << setfill('=') << setw(55) << "" << setfill(' ');
 
-            cout << "\nMasukkan Tanggal Check Out Aktual (DD-MM-YYYY): ";
-            cin.getline(DaftarTamu[i].tanggalCheckOutAktual, 15);
-
+            string tglAktual;
+            while(true) {
+                cout << "\nMasukkan Tanggal Check Out Aktual (DD-MM-YYYY): ";
+                getline(cin, tglAktual);
+                if(cekFormatTanggal(tglAktual)) {
+                    strcpy(DaftarTamu[i].tanggalCheckOutAktual, tglAktual.c_str());
+                    break;
+                }
+                cout << "Format tanggal salah! Gunakan DD-MM-YYYY" << endl;
+            }
             Tanggal tMasuk   = StringKeTanggal(DaftarTamu[i].tanggalCheckIn);
             Tanggal tRencana = StringKeTanggal(DaftarTamu[i].tanggalCheckOutRencana);
             Tanggal tAktual  = StringKeTanggal(DaftarTamu[i].tanggalCheckOutAktual);
