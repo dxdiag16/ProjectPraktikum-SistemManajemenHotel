@@ -465,7 +465,7 @@ void AddGuest(Kamar DaftarKamar[], TipeKamar Tipe[], Tamu DaftarTamu[], int size
         int index;
         while(true) {
             cout << "--- Data Tamu ke-" << i+1 << " ---" << endl;
-            cout << "No. Kamar        : "; cin >> DaftarTamu[isiDataTamu].noKamar;
+            DaftarTamu[isiDataTamu].noKamar = validasiInput("No. Kamar        : ");
         
             index = CariKamar(DaftarKamar,DaftarTamu[isiDataTamu].noKamar);
 
@@ -480,7 +480,6 @@ void AddGuest(Kamar DaftarKamar[], TipeKamar Tipe[], Tamu DaftarTamu[], int size
             }   
             break;
         }
-        cin.ignore();
 
         cout << "Nama Tamu        : ";
         cin.getline(DaftarTamu[isiDataTamu].namaTamu, 50);
@@ -488,8 +487,7 @@ void AddGuest(Kamar DaftarKamar[], TipeKamar Tipe[], Tamu DaftarTamu[], int size
         cin.getline(DaftarTamu[isiDataTamu].noKTP, 20);
         cout << "Tanggal Check In : ";
         cin.getline(DaftarTamu[isiDataTamu].tanggalCheckIn, 15);
-        cout << "Lama Menginap    : "; cin >> DaftarTamu[isiDataTamu].lamaMenginap;
-        cin.ignore();
+        DaftarTamu[isiDataTamu].lamaMenginap = validasiInput("Lama Menginap    : ");
 
         Tanggal checkIn = StringKeTanggal(DaftarTamu[isiDataTamu].tanggalCheckIn);
         Tanggal checkOut = HitungCheckOut(checkIn, DaftarTamu[isiDataTamu].lamaMenginap);
@@ -564,13 +562,21 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
         return;
     }
 
-    cout << "Masukkan No. Kamar yang Check Out : "; cin >> noKamarCheckOut;
+    noKamarCheckOut = validasiInput("Masukkan No. Kamar yang Check Out (0 untuk kembali) : ");
+
+    if(noKamarCheckOut == 0) {
+        system("cls");
+        return;
+    }
+
     bool ditemukan = false;
 
     for(int i = 0; i < isiDataTamu; i++) {
         if(noKamarCheckOut == DaftarTamu[i].noKamar) {
             if(strcmp(DaftarTamu[i].status, "CHECK OUT") == 0) {
                 cout << "Tamu sudah check out!" << endl;
+                system("pause");
+                system("cls");
                 return;
             }
 
@@ -581,7 +587,7 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
             cout << "  No. Kamar         : " << DaftarTamu[i].noKamar << endl;
             cout << "  Tanggal Check In  : " << DaftarTamu[i].tanggalCheckIn << endl;
             cout << "  Check Out Pesan   : " << DaftarTamu[i].tanggalCheckOutRencana << endl;
-            cin.ignore();
+            cout << setfill('=') << setw(55) << "" << setfill(' '); cin.ignore();
 
             cout << "\nMasukkan Tanggal Check Out Aktual (DD-MM-YYYY): ";
             cin.getline(DaftarTamu[i].tanggalCheckOutAktual, 15);
@@ -627,7 +633,6 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
             char konfirmasi;
             cout << "Konfirmasi Check Out & Pembayaran? (y/n): "; 
             cin >> konfirmasi;
-            cin.ignore();
 
             if(konfirmasi == 'y' || konfirmasi == 'Y') {
                 strcpy(DaftarTamu[i].status, "CHECK OUT");
@@ -646,8 +651,9 @@ void CheckOut(Tamu DaftarTamu[], Kamar DaftarKamar[] ,int &isiDataTamu) {
     }
 
     if(!ditemukan) {
-        cout << "\n[ERROR] Tidak ditemukan tamu aktif (CHECK IN) di kamar nomor " << noKamarCheckOut << "!\n";
+        cout << "\n[ERROR] Tidak ditemukan tamu aktif (CHECK IN) di kamar nomor " << noKamarCheckOut << "!";
     }
+    cin.ignore();
     system("pause");
     system("cls");
 }
@@ -692,7 +698,7 @@ void SortGuest(Tamu DaftarTamu[], int &isiDataTamu, Kamar DaftarKamar[]){
     for(int i = 0; i < isiDataTamu; i++) {
         cout << "Data Tamu Ke-" << i + 1 << endl;
         cout << setfill('-') << setw(55) << "" << setfill(' ') << endl;
-        cout << "  Nama Tamu  : " << DaftarTamu[i].namaTamu << right << setw(8) << "" << " | No. Kamar  : " << DaftarTamu[i].noKamar << endl;
+        cout << "  Nama Tamu  : " << DaftarTamu[i].namaTamu << right << setw(5) << "" << " | No. Kamar  : " << DaftarTamu[i].noKamar << endl;
         cout << "  Check In   : " << DaftarTamu[i].tanggalCheckIn << right << setw(1) << "" << " | Lama       : " << DaftarTamu[i].lamaMenginap << " hari" << endl;
         cout << "  Status     : " << DaftarTamu[i].status << endl;
         cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
@@ -736,8 +742,13 @@ void SearchGuest(Tamu DaftarTamu[], int &isiDataTamu) {
         system("cls");
         return;
     }
-    cout << "Masukkan Nama Tamu : ";
+    cout << "Masukkan Nama Tamu (B untuk kembali): ";
     getline(cin, cariNama);
+
+    if(cariNama == "b" ||  cariNama == "B") {
+        system("cls");
+        return;
+    }
 
     cout << "\n";
     cout << "[Memuat Data ke memori...]";
@@ -755,19 +766,16 @@ void SearchGuest(Tamu DaftarTamu[], int &isiDataTamu) {
     int indeks = BinarySearchNama(DaftarTamu, isiDataTamu, cariNama);
 
     if(indeks != -1) {
-        for(int i = 0; i < isiDataTamu; i++) {
-            cout << "Data Tamu Ke-" << i + 1 << endl;
-            cout << "  Nama Tamu         : " << DaftarTamu[i].namaTamu << endl;
-            cout << "  No. KTP           : " << DaftarTamu[i].noKTP << endl;
-            cout << "  No. Kamar         : " << DaftarTamu[i].noKamar << endl;
-            cout << "  Harga/Malam       : " << DaftarTamu[i].tipeKamar.hargaPerMalam << endl;
-            cout << "  Tanggal Check In  : " << DaftarTamu[i].tanggalCheckIn << endl;
-            cout << "  Tanggal Check Out : " << DaftarTamu[i].tanggalCheckOutRencana << endl;
-            cout << "  Lama Menginap     : " << DaftarTamu[i].lamaMenginap << endl;
-            cout << "  No. Telepon       : " << DaftarTamu[i].noTelepon << endl;
-            cout << "  Status            : " << DaftarTamu[i].status << endl;
-            cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
-        } 
+        cout << "  Nama Tamu         : " << DaftarTamu[indeks].namaTamu << endl;
+        cout << "  No. KTP           : " << DaftarTamu[indeks].noKTP << endl;
+        cout << "  No. Kamar         : " << DaftarTamu[indeks].noKamar << endl;
+        cout << "  Harga/Malam       : " << DaftarTamu[indeks].tipeKamar.hargaPerMalam << endl;
+        cout << "  Tanggal Check In  : " << DaftarTamu[indeks].tanggalCheckIn << endl;
+        cout << "  Tanggal Check Out : " << DaftarTamu[indeks].tanggalCheckOutRencana << endl;
+        cout << "  Lama Menginap     : " << DaftarTamu[indeks].lamaMenginap << endl;
+        cout << "  No. Telepon       : " << DaftarTamu[indeks].noTelepon << endl;
+        cout << "  Status            : " << DaftarTamu[indeks].status << endl;
+        cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
     } else {
         cout << "Maaf, nama tamu " << cariNama << " tidak ditemukan." << endl;
         cout << setfill('=') << setw(55) << "" << setfill(' ') << endl;
