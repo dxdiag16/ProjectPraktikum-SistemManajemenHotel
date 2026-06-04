@@ -21,15 +21,12 @@ int validasiInput(string prompt) {
         }
 
         bool valid = true;
-        // Pengecekan dimulai dari indeks 0
         int startIndex = 0; 
 
-        // Jika karakter pertama adalah tanda minus dan panjang input lebih dari 1 karakter
         if(input[0] == '-' && input.length() > 1) {
-            startIndex = 1; // Mulai cek angka dari karakter kedua
+            startIndex = 1;
         }
 
-        // Cek apakah sisa karakternya benar-benar angka
         for(int i = startIndex; i < input.length(); i++) {
             if(!isdigit(input[i])) {
                 valid = false;
@@ -41,7 +38,7 @@ int validasiInput(string prompt) {
             value = stoi(input);
             if(value < 0) {
                 cout << "Input tidak boleh negatif!" << endl;
-                continue; // Mengulang loop untuk meminta input lagi
+                continue;
             }
             return value;
         } else {
@@ -94,7 +91,6 @@ Tanggal StringKeTanggal(string tanggal) {
 }
 
 Tanggal HitungCheckOut(Tanggal masuk, int lamaMenginap) {
-    // tambahkan angka 0 di awal, supaya indeks 1 = Januari, indeks 12 = Desember
     int hariDalamBulan[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
     masuk.hari += lamaMenginap;
@@ -124,35 +120,29 @@ Tanggal HitungCheckOut(Tanggal masuk, int lamaMenginap) {
     return masuk;
 }
 
-// cek apakah suatu tahun merupakan tahun kabisat atau bukan
 bool TahunKabisat(int tahun) {
-    // rumus tahun kabisat itu habis dibagi 4 DAN tidak habis dibagi 100, 
-    // atau harus habis dibagi 400 (khusus tahun abad kelipatan 100)
     return (tahun % 4 == 0 && tahun % 100 != 0) || (tahun % 400 == 0);
 }
 
-// mengonversi tanggal ke dalam bentuk satu angka bulat besar (Absolute Date) untuk memudahkan perhitungan selisih hari
 int TotalHari(Tanggal t) {
     int total = 0;
-    // angka 0 di awal adalah "dummy" supaya: Bulan 1 = Januari, Bulan 2 = Februari, dst
     int hariDalamBulan[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-    // itung semua hari dari tahun-tahun sebelumnya (dari tahun ke-1)
     for(int y = 1; y < t.tahun; y++) {
         if (TahunKabisat(y) == true) {
-            total += 366; // kalau tahun tersebut kabisat, tambah 366 hari ke dalam "tabungan" total
+            total += 366; 
         } else {
-            total += 365; // kalau tahun biasa (normal), cuma ditambah 365 hari
+            total += 365; 
         }
     }
-    // kalo tahun dari tanggal yang dicek adalah kabisat, Februari diubah jadi 29 hari.
+
     if (TahunKabisat(t.tahun)) {
         hariDalamBulan[2] = 29;
     }
-    // itung semua hari dari bulan-bulan sebelumnya di tahun berjalan
+
     for(int b = 1; b < t.bulan; b++) {
         total += hariDalamBulan[b];
     }
-    // tambahkan sisa hari pada bulan yang sekarang
+    
     total += t.hari;
     return total;
 }
@@ -213,7 +203,7 @@ bool cekAngkaSaja(string input) {
         if(!isdigit(c)) return false;
     }
     return true;
-} // untuk nomor telepon
+} 
 
 bool cekHurufSaja(string str) {
     for (int i = 0; i < str.length(); i++) {
@@ -221,17 +211,17 @@ bool cekHurufSaja(string str) {
             return false; 
         }
     }
-    return true; // Jika semua karakter aman
-}// untuk memastikan input nama adalah huruf bukan angka (soalnya nama tipenya char)
+    return true; 
+}
 
 bool cekKTPDuplikat(Tamu DaftarTamu[], int isiDataTamu, string ktp) {
     for(int i = 0; i < isiDataTamu; i++) {
         if(strcmp(DaftarTamu[i].noKTP, ktp.c_str()) == 0) {
-            return true; // duplikat ditemukan
+            return true; 
         }
     }
     return false;
-} // untuk validasi nomor KTP agar tidak ada duplikat
+}
 
 void simpanKeFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int isiDataTamu) {
     ofstream file("hotel.txt");
@@ -240,7 +230,6 @@ void simpanKeFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int isiDataTamu) {
         return;
     }
 
-    // 1. Tulis data KAMAR (20 baris fixed)
     for (int i = 0; i < 20; i++) {
         file << "KAMAR " << DaftarKamar[i].noKamar << "|"
              << DaftarKamar[i].tipeKamar.namaTipe << "|"
@@ -251,7 +240,6 @@ void simpanKeFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int isiDataTamu) {
              << DaftarKamar[i].namaTamu << "\n";
     }
 
-    // 2. Tulis data TAMU (dinamis)
     for (int i = 0; i < isiDataTamu; i++) {
         file << "TAMU " << DaftarTamu[i].namaTamu << "|"
              << DaftarTamu[i].noKTP << "|"
@@ -269,11 +257,10 @@ void simpanKeFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int isiDataTamu) {
     file.close();
 }
 
-// Fungsi untuk membaca data dari hotel.txt saat program dijalankan
 bool loadDariFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int &isiDataTamu) {
     ifstream file("hotel.txt");
     if (!file.is_open()) {
-        return false; // File belum ada (jalankan inisialisasi default)
+        return false;
     }
 
     string baris;
@@ -285,9 +272,8 @@ bool loadDariFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int &isiDataTamu) {
 
         stringstream ss(baris);
         string prefix;
-        ss >> prefix; // Membaca KAMAR atau TAMU
+        ss >> prefix;
 
-        // Hilangkan spasi setelah prefix untuk membaca data sisa
         string sisa;
         getline(ss, sisa);
         if (!sisa.empty() && sisa[0] == ' ') sisa.erase(0, 1);
@@ -296,7 +282,6 @@ bool loadDariFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int &isiDataTamu) {
         string field;
 
         if (prefix == "KAMAR" && indexKamar < 20) {
-            // Parse data kamar
             getline(lineData, field, '|'); DaftarKamar[indexKamar].noKamar = stoi(field);
             getline(lineData, field, '|'); strcpy(DaftarKamar[indexKamar].tipeKamar.namaTipe, field.c_str());
             getline(lineData, field, '|'); DaftarKamar[indexKamar].tipeKamar.hargaPerMalam = stoi(field);
@@ -307,7 +292,6 @@ bool loadDariFile(Kamar DaftarKamar[], Tamu DaftarTamu[], int &isiDataTamu) {
             indexKamar++;
         } 
         else if (prefix == "TAMU") {
-            // Parse data tamu
             getline(lineData, field, '|'); strcpy(DaftarTamu[isiDataTamu].namaTamu, field.c_str());
             getline(lineData, field, '|'); strcpy(DaftarTamu[isiDataTamu].noKTP, field.c_str());
             getline(lineData, field, '|'); DaftarTamu[isiDataTamu].noKamar = stoi(field);
@@ -1018,11 +1002,9 @@ int main() {
 
     initKamar(DaftarKamar, Tipe);
 
-    // MODIFIKASI FILE HANDLING DI SINI
     if (!loadDariFile(DaftarKamar, DaftarTamu, isiDataTamu)) {
-        // Jika file tidak ada, inisialisasi default baru dijalankan
         initKamar(DaftarKamar, Tipe);
-        simpanKeFile(DaftarKamar, DaftarTamu, isiDataTamu); // Buat file pertama kali
+        simpanKeFile(DaftarKamar, DaftarTamu, isiDataTamu);
     }
 
     TampilanAwal();
